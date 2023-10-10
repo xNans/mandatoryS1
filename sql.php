@@ -1,11 +1,13 @@
--- INNODB bruges, til at konvertere databasen til INNODB, da den ellers er iSam. Den skal konverteres, ellers virker designer ikke
+-- INNODB bruges, til at konvertere databasen til INNODB, da den ellers er iSam. Den skal konverteres, ellers virker designer ikke.
+-- INNODB er sat in på alle tabeller
 
-DROP DATABASE IF EXISTS ResturantDB;
-CREATE DATABASE ResturantDB;
+DROP DATABASE IF EXISTS ResturantDB; -- Fjerner indholdet i databasen, for at indhente ny tilgængelig data
+CREATE DATABASE ResturantDB; -- Opretter databasen
 
-USE ResturantDB;
+USE ResturantDB; -- Angiver at det er denne database, der skal bruges
 
-DROP TABLE IF EXISTS PostalCode;
+-- Fjerner indholdet i de forskellige tabeller, for at indhente ny tilgængelig data
+DROP TABLE IF EXISTS PostalCode; 
 DROP TABLE IF EXISTS rLocation;
 DROP TABLE IF EXISTS Customer;
 DROP TABLE IF EXISTS rTable;
@@ -15,19 +17,22 @@ DROP TABLE IF EXISTS Food;
 DROP TABLE IF EXISTS MenuFood;
 DROP TABLE IF EXISTS Reservation;
 
-CREATE TABLE PostalCode
+CREATE TABLE PostalCode -- Opretter en tabel med det givne navn
 (
-    PostalID INT(4) NOT NULL PRIMARY KEY,
-    City VARCHAR(100)
-)   Engine=InnoDB; 
+    PostalID INT(4) NOT NULL PRIMARY KEY, -- PostalID er postkode, Jeg har valgt INT(4), da jeg tager udgangspunkt i DK, 
+    --med 4 cifret postnummer. Der skal være en værdi da det er ID'et i tabellen der bruges af andre tabeller, derfor NOT NULL og primary key
+    City VARCHAR(100) -- VARCHAR(100) bruger jer, for at gøre det muligt at bruge alle nødvendige tegn til bynavnet.
+    --Jeg sætter værdien til 100, for at sikre, at man ikke løber tør for plads til bynavnet
+)   Engine=InnoDB;  -- Jeg bruger denne kommando, da min database er sat til MyISam, og jeg ønsker Inno
 
-CREATE TABLE rLocation
+CREATE TABLE rLocation 
 (
-    rLocationID int AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    rLocationID INT AUTO_INCREMENT NOT NULL PRIMARY KEY, -- Her har jeg sat til ID, da det ikke har en betydning, hvad ID'et hedder
     StreetName VARCHAR(100),
     StreetNr INT(50),
     PostalID INT,
-    FOREIGN KEY (PostalID) REFERENCES PostalCode (PostalID)
+    FOREIGN KEY (PostalID) REFERENCES PostalCode (PostalID) -- Jeg har lavet et foreign key udfra PostalCode ID'et, da dette er relevant
+    -- i forhold til resturantens lokation
 )   Engine=InnoDB;
 
 CREATE TABLE Customer
@@ -53,13 +58,15 @@ CREATE TABLE Menu
     mDescription TEXT(3000)
 )   Engine=InnoDB;
 
-CREATE TABLE rTableMenu
+CREATE TABLE rTableMenu -- Jeg har lavet et junction tabel, da rTable og Menu har en mange til mange relation
 (
     rTableID int NOT NULL,
     MenuID int NOT NULL,
-    CONSTRAINT rTableMenu_PK PRIMARY KEY (rTableID, MenuID),
+    CONSTRAINT rTableMenu_PK PRIMARY KEY (rTableID, MenuID), -- Denne kommando skaber den nye primærenøgle, for denne tabel
     FOREIGN KEY (rTableID) REFERENCES rTable (rTableID),
     FOREIGN KEY (MenuID) REFERENCES Menu (MenuID)
+    -- Det er vigtigt at rækkefølgen i brugen af rTableID og MenuID er ens - hvis rTable står først, skal den gøre det hele vejen igennem
+    -- Ellers har Databasen svært ved at finde ud af, hvad der er hvad
 )   Engine=InnoDB;
 
 CREATE TABLE Food
@@ -92,8 +99,13 @@ CREATE TABLE Reservation
 
 )   Engine=InnoDB;
 
-INSERT INTO PostalCode VALUE ('6760','Ribe');
-INSERT INTO rLocation VALUE (NULL, 'Skolegade', 'a4', 6760);
+--Følgende er testdata
+
+INSERT INTO PostalCode VALUE ('6760','Ribe'); -- INSERT INTO PostalCode angiver, hvor indholdet skal palceres. Herefter fortæller VALUE
+-- at det er en "værdi", altså data, der skal sættes ind. Rækkefølgen er her relevant, da den sætter indholdet ind 1:1. Så hvis jeg i dette
+-- tilfælde bytter rundt på 6760 og Ribe, Vil Ribe blive den primære nøgle. Udover at indholdet vil være ugyldigt, da den først culonne
+-- Er sat til at have INT værdi - kun hele tal
+INSERT INTO rLocation VALUE (NULL, 'Skolegade', 'a4', 6760); -- I tabeller hvor ID'et er sat til AI, skal denne markeres med en NULL værdi
 
 INSERT INTO Customer VALUE (NULL,'Nanna', 'Møller', '51239423');
 INSERT INTO Customer VALUE (NULL,'Sanne', 'Christensen', '32498512');
@@ -106,7 +118,7 @@ INSERT INTO Customer VALUE (NULL,'Nikolaj', 'Nulle', '51207423');
 INSERT INTO Customer VALUE (NULL,'Liva', 'Odder', '51203923');
 
 
-INSERT INTO rTable VALUE (NULL, '5', 1);
+INSERT INTO rTable VALUE (NULL, '5', 1); -- Når der indhentes et ID i for af en foreign key, skal denne værdi ikke sættes i en string
 INSERT INTO rTable VALUE (NULL, '2', 1);
 INSERT INTO rTable VALUE (NULL, '2', 1);
 INSERT INTO rTable VALUE (NULL, '4', 1);
@@ -122,6 +134,8 @@ INSERT INTO Menu VALUE (NULL, 'Efterårs menu', 'Frisk kød med årstidens grøn
 INSERT INTO Menu VALUE (NULL, 'Vegetar', 'Årstidens grønt med tufo');
 INSERT INTO Menu VALUE (NULL, 'Børnemenu', 'Håndgodter med dressign');
 
+
+-- Junction tables fungere ved, at man tager ID's fra de brugte tabeller, og sætter sammen som vist nedenfor.
 INSERT INTO rTableMenu VALUE (1,1);
 INSERT INTO rTableMenu VALUE (1,4);
 
@@ -180,13 +194,13 @@ SELECT * FROM rTable;
 
 -- Få et overblik over alle reservationer fra en bestemt gæst, samt checkin og checkout, sorteret efter dato
 
-SELECT * FROM reservation
-WHERE CustomerID = 1
-ORDER BY ReservationDate;
+SELECT * FROM reservation 
+WHERE CustomerID = 1 -- Angiver med ID hvilken gæst der forspørges information om
+ORDER BY ReservationDate; -- Sætter rækkefølgen på reservations datoerne fra mindste værdi til højeste
 
 -- Information om et specifikt bord og dens gæster, for en specifik dato
 
-SELECT * FROM reservation
-WHERE rTableID = 1
-AND ReservationDate = '10/10-2023'
+SELECT * FROM reservation -- Vælger alt inhold fra tabellen "Reservation"
+WHERE rTableID = 1 -- Angiver med ID hvilket bord der forspørges information om
+AND ReservationDate = '10/10-2023' -- Fortæller hvilken dato, der forspørges om information fra
 
